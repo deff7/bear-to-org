@@ -2,10 +2,10 @@
 
 module Archive where
 
-import Data.Text (Text, pack, unpack)
+import Data.Text (pack, unpack)
 import qualified Data.Text.IO as TIO
 import Text.Pandoc
-import Text.Pandoc.Walk (walk, query)
+import Text.Pandoc.Walk (walk)
 import System.FilePath.Posix (takeFileName)
 import Data.UUID (UUID, toString)
 import Network.URI.Encode (decodeText)
@@ -13,8 +13,10 @@ import Network.URI.Encode (decodeText)
 import NoteFile
 import qualified Data.Map.Strict as Map
 
+type Index = Map.Map FilePath NoteFile
+
 -- TODO: Reader Monad for notes index?
-readNote :: FilePath -> Map.Map FilePath NoteFile -> IO Pandoc
+readNote :: FilePath -> Index -> IO Pandoc
 readNote fp notesIndex = do
   contents <- TIO.readFile fp
   f <- runIOorExplode $ readHtml def contents
@@ -23,10 +25,10 @@ readNote fp notesIndex = do
 writeNote :: FilePath -> Pandoc -> IO ()
 writeNote fp doc =  runIOorExplode (writeOrg def doc) >>= TIO.writeFile fp
 
-lookupLinkUUID :: FilePath -> Map.Map FilePath NoteFile -> Maybe UUID
+lookupLinkUUID :: FilePath -> Index -> Maybe UUID
 lookupLinkUUID fp notesIndex = uuid <$> Map.lookup (takeFileName fp) notesIndex
 
-convertIDs :: Map.Map FilePath NoteFile -> Pandoc -> Pandoc
+convertIDs :: Index -> Pandoc -> Pandoc
 convertIDs notesIndex = walk go
   where
     go :: Block -> Block
@@ -38,7 +40,7 @@ convertIDs notesIndex = walk go
     go x = x
 
 -- TODO: bear-note callbacks too
-convertLinks :: Map.Map FilePath NoteFile -> Pandoc -> Pandoc
+convertLinks :: Index -> Pandoc -> Pandoc
 convertLinks notesIndex = walk go
   where
     go :: Inline -> Inline
