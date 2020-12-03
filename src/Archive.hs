@@ -18,20 +18,13 @@ readNote :: FilePath -> Map.Map FilePath NoteFile -> IO Pandoc
 readNote fp notesIndex = do
   contents <- TIO.readFile fp
   f <- runIOorExplode $ readHtml def contents
-  pure $ convertLinks notesIndex $ removeLineBreaks f
+  pure $ convertIDs notesIndex $ convertLinks notesIndex $ removeLineBreaks f
 
 writeNote :: FilePath -> Pandoc -> IO ()
 writeNote fp doc =  runIOorExplode (writeOrg def doc) >>= TIO.writeFile fp
 
 lookupLinkUUID :: FilePath -> Map.Map FilePath NoteFile -> Maybe UUID
 lookupLinkUUID fp notesIndex = uuid <$> Map.lookup (takeFileName fp) notesIndex
-
-explore :: Pandoc -> [Text]
-explore = query go
-  where
-    go :: Block -> [Text]
-    go (Header _ (id, _, _) _) = [id]
-    go _ = []
 
 convertIDs :: Map.Map FilePath NoteFile -> Pandoc -> Pandoc
 convertIDs notesIndex = walk go
@@ -41,9 +34,10 @@ convertIDs notesIndex = walk go
     go h@(Header 1 (id, cs, kvs) content) =
       case lookupLinkUUID (unpack $ decodeText id <> ".html") notesIndex of
         Nothing -> h
-        (Just u) -> Header 1 (pack (toString u), cs, kvs) content
+        (Just u) -> Header 1 (id, cs, ("ID", pack (toString u)) : kvs ) content
     go x = x
 
+-- TODO: bear-note callbacks too
 convertLinks :: Map.Map FilePath NoteFile -> Pandoc -> Pandoc
 convertLinks notesIndex = walk go
   where
