@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: a98287ed3b490127e9bd31b04d2dc948cc73fc6d924ad390420cb959d7379bfc
+-- hash: 114a82c07f96d28b2b290cb22911b9601b297099661a9dc3b7160173c71a79b4
 
 name:           zettel-migrator
 version:        0.1.0.0
@@ -30,6 +30,7 @@ library
       Archive
       Lib
       NoteFile
+      Org
   other-modules:
       Paths_zettel_migrator
   hs-source-dirs:

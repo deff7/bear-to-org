@@ -5,6 +5,7 @@ module Main where
 
 import NoteFile
 import Archive
+import Org
 
 import System.FilePath.Posix
 
@@ -15,11 +16,13 @@ main = do
   notes <- loadNotesList "/home/deff/Repos/Bear-backup/"
   printNotesList notes
   let notesIndex = notesListToMap notes
+  let orgPath = "/home/deff/org"
+
+  writeFile (orgPath </> ".orgids") (notesIndexToOrgIds notesIndex)
 
   docs <- mapM (\n -> do
                    note <- readNote (absolutePath n) notesIndex
                    pure (absolutePath n, note)) notes
-  mapM_ (\(path, doc) -> writeNote ("./out" </> (replaceExtension (takeFileName path) "org")) doc) docs
+  mapM_ (\(path, doc) -> writeNote (orgPath </> (replaceExtension (takeFileName path) "org")) doc) docs
 
-  -- TODO: what the case with Bear callbacks??? See Read to lead.html
-  -- TODO: org-id-file ??
+  -- TODO: fix cant find Easy &header= simple&x-error=bearx-callback-urlcreate?title=Easy%20%2F%20simple.html
