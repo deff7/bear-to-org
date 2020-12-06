@@ -1,3 +1,3 @@
-# Changelog for zettel-migrator
+# Changelog for bear-to-org
 
 ## Unreleased changes
