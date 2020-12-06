@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 114a82c07f96d28b2b290cb22911b9601b297099661a9dc3b7160173c71a79b4
+-- hash: f42d0884527ea9d87caf245da2108e36718d1639f87bca167f135e063705a3ae
 
 name:           zettel-migrator
 version:        0.1.0.0
@@ -40,6 +40,7 @@ library
     , containers
     , directory
     , filepath
+    , optparse-applicative
     , pandoc
     , pandoc-types
     , random
@@ -60,6 +61,7 @@ executable zettel-migrator-exe
     , containers
     , directory
     , filepath
+    , optparse-applicative
     , pandoc
     , pandoc-types
     , random
@@ -82,6 +84,7 @@ test-suite zettel-migrator-test
     , containers
     , directory
     , filepath
+    , optparse-applicative
     , pandoc
     , pandoc-types
     , random

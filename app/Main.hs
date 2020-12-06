@@ -9,16 +9,34 @@ import Org
 
 import System.FilePath.Posix
 
-import qualified Data.Map.Strict as Map
+import Control.Monad (when)
+import Options.Applicative
+
+data Params = Params
+  { notesDirectory :: FilePath
+  , outputDirectory :: FilePath
+  , generateOrgIds :: Bool
+  , verbose :: Bool
+  }
+
+opts :: ParserInfo Params
+opts = info (flags <**> helper) (fullDesc <> progDesc "Convert notes exported from Bear App to org files")
+  where
+    flags = Params
+      <$> strOption (long "in" <> metavar "PATH" <> help "Directory of HTML notes imported from Bear App")
+      <*> strOption (long "out" <> metavar "PATH" <> help "Output directory for org files")
+      <*> switch (long "ids" <> short 'i' <> help "Whether to generate .orgids file")
+      <*> switch (long "verbose" <> short 'v' <> help "Print processing information")
 
 main :: IO ()
 main = do
-  notes <- loadNotesList "/home/deff/Repos/Bear-backup/"
-  printNotesList notes
+  params <- execParser opts
+  notes <- loadNotesList (notesDirectory params)
+  when (verbose params) $ printNotesList notes
   let notesIndex = notesListToMap notes
-  let orgPath = "/home/deff/org"
+  let orgPath = outputDirectory params
 
-  writeFile (orgPath </> ".orgids") (notesIndexToOrgIds notesIndex)
+  when (generateOrgIds params) $ writeFile (orgPath </> ".orgids") (notesIndexToOrgIds notesIndex)
 
   docs <- mapM (\n -> do
                    note <- readNote (absolutePath n) notesIndex
