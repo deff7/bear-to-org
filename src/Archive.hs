@@ -4,7 +4,7 @@ module Archive where
 
 import qualified Data.Text as T
 import Data.Text (Text, pack, unpack)
-import Data.List (stripPrefix)
+import Data.List
 import qualified Data.Text.IO as TIO
 import Text.Pandoc
 import Text.Pandoc.Walk (walk, walkM, query)
@@ -43,38 +43,63 @@ normalizeHeaders p = walk (normalize minLvl) p
 lookupLinkUUID :: FilePath -> Index -> Maybe UUID
 lookupLinkUUID fp notesIndex = uuid <$> Map.lookup (takeFileName fp) notesIndex
 
-convertIDs :: Index -> Pandoc -> Pandoc
-convertIDs notesIndex = walk go
+trimFromInfix :: String -> String -> String
+trimFromInfix subs s =
+  let parts = zip (tails s) (inits s) in
+    case dropWhile (not . isPrefixOf subs . fst) parts of
+      [] -> s
+      (x:_) -> snd x
+
+cutInfixOut :: String -> String -> String
+cutInfixOut _ "" = ""
+cutInfixOut inf s@(x:xs) =
+  if inf `isPrefixOf` s
+  then maybe s id $ stripPrefix inf s
+  else x : cutInfixOut inf xs
+
+normalizeLink :: String -> String
+normalizeLink = appendExt . sanitizeLink . extractFileName . decode
   where
-    go :: Block -> Block
-    -- Only first-level headers
-    go h@(Header 1 (id, cs, kvs) content) =
-      case lookupLinkUUID (unpack $ decodeText id <> ".html") notesIndex of
-        Nothing -> h
-        (Just u) -> Header 1 ("", cs, ("ID", pack (toString u)) : kvs ) content
-    go x = x
+    bearPrefix = "bear://x-callback-url/open-note?title="
+    errorCallback = "&x-error=bear://x-callback-url/create"
+    sanitizeLink = cutInfixOut "&header=" . trimFromInfix errorCallback
+
+    appendExt s = if ".html" `isSuffixOf` s then s else s <> ".html"
+
+    extractFileName s =
+      case stripPrefix bearPrefix s of
+        Nothing -> s
+        (Just x) -> x
+
 
 convertLinks :: Index -> Pandoc -> Pandoc
 convertLinks notesIndex = walk go
   where
     go :: Inline -> Inline
     go l@(Link attr content (url, title)) =
-      case lookupLinkUUID (decode $ extractFileName $ unpack url) notesIndex of
-        Nothing -> l
+      case lookupLinkUUID (normalizeLink $ unpack url) notesIndex of
+        Nothing -> Link attr (cleanup content) ("BAD:" <> (pack $ normalizeLink $ unpack url), title)
         (Just u) -> (Link attr (cleanup content) ("id:" <> pack (toString u), title))
     go x = x
-
-    bearPrefix = "bear://x-callback-url/open-note?title="
-    prohibitedChars = ":/" :: String
-    extractFileName s =
-      case stripPrefix bearPrefix s of
-        Nothing -> s
-        (Just x) -> filter (\x -> x `notElem` prohibitedChars) x <> ".html"
 
     cleanup = filter dropLineBreak
       where
         dropLineBreak LineBreak = False
         dropLineBreak _ = True
+
+convertIDs :: Index -> Pandoc -> Pandoc
+convertIDs notesIndex = walk go
+  where
+    go :: Block -> Block
+    -- Only first-level headers
+    go h@(Header 1 (id, cs, kvs) content) =
+      case lookupLinkUUID (cutProhibited . normalizeLink . unpack $ id) notesIndex of
+        Nothing -> h
+        (Just u) -> Header 1 ("", cs, ("ID", pack (toString u)) : kvs ) content
+    go x = x
+
+    prohibitedChars = ":/" :: String
+    cutProhibited = filter (\x -> x `notElem` prohibitedChars)
 
 removeLineBreaks :: Pandoc -> Pandoc
 removeLineBreaks = walk go

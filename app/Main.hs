@@ -24,5 +24,3 @@ main = do
                    note <- readNote (absolutePath n) notesIndex
                    pure (absolutePath n, note)) notes
   mapM_ (\(path, doc) -> writeNote (orgPath </> (replaceExtension (takeFileName path) "org")) doc) docs
-
-  -- TODO: fix cant find Easy &header= simple&x-error=bearx-callback-urlcreate?title=Easy%20%2F%20simple.html
