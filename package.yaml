@@ -31,6 +31,7 @@ dependencies:
 - containers
 - uri-encode
 - optparse-applicative
+- time
 
 library:
   source-dirs: src

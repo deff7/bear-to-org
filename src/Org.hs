@@ -9,7 +9,7 @@ import Data.UUID (toString)
 notesIndexToOrgIds :: Map.Map FilePath NoteFile -> String
 notesIndexToOrgIds = wrap . intercalate " " . map (display . convert) . Map.elems
   where
-    convert note = ( takeFileName . dropExtension . absolutePath $ note, toString $ uuid note )
+    convert note = ( mkFileName note, toString $ uuid note )
     display (title, uuid) = "(" <> quote title <> " " <> quote uuid <> ")"
     wrap c = "(" <> c <> ")"
     quote c = "\"" <> escape c <> "\""

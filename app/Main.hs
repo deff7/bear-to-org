@@ -39,6 +39,7 @@ main = do
   when (generateOrgIds params) $ writeFile (orgPath </> ".orgids") (notesIndexToOrgIds notesIndex)
 
   docs <- mapM (\n -> do
-                   note <- readNote (absolutePath n) notesIndex
-                   pure (absolutePath n, note)) notes
-  mapM_ (\(path, doc) -> writeNote (orgPath </> (replaceExtension (takeFileName path) "org")) doc) docs
+                   doc <- readNote (absolutePath n) notesIndex
+                   pure (n, doc)) notes
+
+  mapM_ (\(note, doc) -> writeNote (orgPath </> mkFileName note) doc) docs

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: bba4718cbd04f037cb8ead51926293dcb2f62eebf597c03ea687cf86d7445edc
+-- hash: 813bd2705e6a9a2a92e9c08e6e6d7f9330c67fb207aac261f98617fb168ebcbf
 
 name:           bear-to-org
 version:        0.1.0.0
@@ -45,6 +45,7 @@ library
     , pandoc-types
     , random
     , text
+    , time
     , uri-encode
     , uuid
   default-language: Haskell2010
@@ -67,6 +68,7 @@ executable bear-to-org-exe
     , pandoc-types
     , random
     , text
+    , time
     , uri-encode
     , uuid
   default-language: Haskell2010
@@ -90,6 +92,7 @@ test-suite bear-to-org-test
     , pandoc-types
     , random
     , text
+    , time
     , uri-encode
     , uuid
   default-language: Haskell2010
