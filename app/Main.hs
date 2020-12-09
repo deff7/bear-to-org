@@ -36,10 +36,11 @@ main = do
   let notesIndex = notesListToMap notes
   let orgPath = outputDirectory params
 
-  when (generateOrgIds params) $ writeFile (orgPath </> ".orgids") (notesIndexToOrgIds notesIndex)
 
   docs <- mapM (\n -> do
                    doc <- readNote (absolutePath n) notesIndex
                    pure (n, doc)) notes
 
-  mapM_ (\(note, doc) -> writeNote (orgPath </> mkFileName note) doc) docs
+  when (generateOrgIds params) $ writeFile (orgPath </> ".orgids") (notesIndexToOrgIds docs)
+
+  mapM_ (\(note, doc) -> writeNote (orgPath </> mkFileName note doc) doc) docs

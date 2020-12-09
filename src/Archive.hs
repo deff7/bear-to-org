@@ -8,16 +8,18 @@ import Data.List
 import qualified Data.Text.IO as TIO
 import Text.Pandoc
 import Text.Pandoc.Walk (walk, walkM, query)
-import System.FilePath.Posix (takeFileName)
 import Data.UUID (UUID, toString)
 import Network.URI.Encode (decodeText, decode)
+import Data.Time.Format
+import Data.Time.Clock
+import Data.Time.Format.ISO8601
+import System.FilePath.Posix (replaceExtension, takeFileName, takeExtensions, (</>))
 
 import NoteFile
 import qualified Data.Map.Strict as Map
 
 type Index = Map.Map FilePath NoteFile
 
--- TODO: Reader Monad for notes index?
 readNote :: FilePath -> Index -> IO Pandoc
 readNote fp notesIndex = do
   contents <- TIO.readFile fp
@@ -28,6 +30,27 @@ writeNote :: FilePath -> Pandoc -> IO ()
 writeNote fp doc =  runIOorExplode (writeOrg opts doc) >>= TIO.writeFile fp
   where
     opts = def { writerColumns = 200 }
+
+-- TODO: maybe implement error handling?
+-- TODO: implement smarter timestamp assigning
+takeCreationTime :: Pandoc -> UTCTime
+takeCreationTime (Pandoc (Meta m) _) = convert $ m Map.! "created"
+  where
+    convert (MetaInlines [Str s]) =
+      case parseTimeM False defaultTimeLocale "%Y-%m-%dT%H:%M:%S%z" (unpack s) of
+        Just t -> t
+
+mkFileName :: NoteFile -> Pandoc -> FilePath
+mkFileName n p = (ts ++) $ sanitizeFileName $ (`replaceExtension` "org") $ takeFileName $ absolutePath n
+  where
+    ts = formatTime defaultTimeLocale "%Y%m%d%H%M%S" timestamp ++ "-"
+    sanitizeFileName =
+      map
+        (\x ->
+           case x of
+             ' ' -> '_'
+             _ -> x)
+    timestamp = takeCreationTime p
 
 normalizeHeaders :: Pandoc -> Pandoc
 normalizeHeaders p = walk (normalize minLvl) p
