@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 813bd2705e6a9a2a92e9c08e6e6d7f9330c67fb207aac261f98617fb168ebcbf
+-- hash: 7289d4643aa96a4a83c607520567627e525ca129bf2718b7428e8558422b223a
 
 name:           bear-to-org
 version:        0.1.0.0
@@ -28,9 +28,7 @@ source-repository head
 library
   exposed-modules:
       Archive
-      Lib
       NoteFile
-      Org
   other-modules:
       Paths_bear_to_org
   hs-source-dirs:

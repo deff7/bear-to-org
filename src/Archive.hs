@@ -32,7 +32,6 @@ writeNote fp doc =  runIOorExplode (writeOrg opts doc) >>= TIO.writeFile fp
     opts = def { writerColumns = 200 }
 
 -- TODO: maybe implement error handling?
--- TODO: implement smarter timestamp assigning
 takeCreationTime :: Pandoc -> UTCTime
 takeCreationTime (Pandoc (Meta m) _) = convert $ m Map.! "created"
   where
@@ -40,17 +39,43 @@ takeCreationTime (Pandoc (Meta m) _) = convert $ m Map.! "created"
       case parseTimeM False defaultTimeLocale "%Y-%m-%dT%H:%M:%S%z" (unpack s) of
         Just t -> t
 
-mkFileName :: NoteFile -> Pandoc -> FilePath
-mkFileName n p = (ts ++) $ sanitizeFileName $ (`replaceExtension` "org") $ takeFileName $ absolutePath n
+-- Iterative process for solving duplicate time conflicts
+mkUniqTimeList' :: [UTCTime] -> [UTCTime]
+mkUniqTimeList' = go 0
   where
-    ts = formatTime defaultTimeLocale "%Y%m%d%H%M%S" timestamp ++ "-"
+    go 1000 xs = xs
+    go n xs = let xs' = mkUniqTimeList xs in
+                if length (group $ sort xs') == length xs
+                then xs'
+                else go (n+1) xs'
+
+mkUniqTimeList :: [UTCTime] -> [UTCTime]
+mkUniqTimeList = concatMap spread . group . sort
+  where
+    spread ts = zipWith (addUTCTime . fromInteger) ([0..] :: [Integer]) ts
+
+mkFileName :: NoteFile -> UTCTime -> FilePath
+mkFileName n t = (ts ++) $ sanitizeFileName $ (`replaceExtension` "org") $ takeFileName $ absolutePath n
+  where
+    ts = formatTime defaultTimeLocale "%Y%m%d%H%M%S" t ++ "-"
     sanitizeFileName =
       map
         (\x ->
            case x of
              ' ' -> '_'
              _ -> x)
-    timestamp = takeCreationTime p
+
+notesIndexToOrgIds ::[(NoteFile, UTCTime)] -> String
+notesIndexToOrgIds = wrap . intercalate " " . map (display . convert)
+  where
+    convert (note, ts) = ( mkFileName note ts, toString $ uuid note )
+    display (title, uuid) = "(" <> quote title <> " " <> quote uuid <> ")"
+    wrap c = "(" <> c <> ")"
+    quote c = "\"" <> escape c <> "\""
+
+    escape "" = ""
+    escape ('"':xs) = '\\' : '"' : escape xs
+    escape (x:xs) = x : escape xs
 
 normalizeHeaders :: Pandoc -> Pandoc
 normalizeHeaders p = walk (normalize minLvl) p

@@ -5,7 +5,6 @@ module Main where
 
 import NoteFile
 import Archive
-import Org
 
 import System.FilePath.Posix
 
@@ -41,6 +40,10 @@ main = do
                    doc <- readNote (absolutePath n) notesIndex
                    pure (n, doc)) notes
 
-  when (generateOrgIds params) $ writeFile (orgPath </> ".orgids") (notesIndexToOrgIds docs)
+  let timestamps = mkUniqTimeList' . map (takeCreationTime . snd) $ docs
 
-  mapM_ (\(note, doc) -> writeNote (orgPath </> mkFileName note doc) doc) docs
+  when (generateOrgIds params) $ do
+    let notesWithTime = zip (map fst docs) timestamps
+    writeFile (orgPath </> ".orgids") (notesIndexToOrgIds notesWithTime)
+
+  mapM_ (\((note, doc), ts) -> writeNote (orgPath </> mkFileName note ts) doc) (zip docs timestamps)
